@@ -1,0 +1,6 @@
+/WWW-KrispyKreme-Hotlight-*
+/.build
+/_build*
+/Build
+MYMETA.*
+!META.json
