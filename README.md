@@ -22,9 +22,9 @@ WWW::KrispyKreme::Hotlight - Fetch Krispy Kreme locations near a given geolocati
       # geolocation of store
       my $geo = $store->{geoLocation};
 
-      # shortened krispy kreme link to the location page!
-      # i.e. http://kkre.me/okjGVT
-      my $url = $store->{url};
+        # shortened krispy kreme link to the location page!
+        # i.e. http://kkre.me/okjGVT
+        my $url = $store->{url};
     }
 
 # DESCRIPTION

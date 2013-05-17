@@ -36,6 +36,11 @@
       },
       "runtime" : {
          "requires" : {
+            "HTML::TreeBuilder::XPath" : "0.0",
+            "Mojo::JSON" : "0.0",
+            "Moose" : "0.0",
+            "URI" : "0.0",
+            "WWW::Mechanize" : "0.0",
             "perl" : "5.008005"
          }
       },
