@@ -2,6 +2,7 @@ package WWW::KrispyKreme::Hotlight;
 
 use Mojo::Base -base;
 use Mojo::UserAgent;
+use Mojo::URL;
 
 our $VERSION = '0.01';
 
@@ -10,11 +11,13 @@ has locations => \&_build_locations;
 
 sub _build_locations {
   my ($self) = @_;
-  my $geo = $self->{where} or return [];
+  my $geo = $self->where or return [];
+
+  my $url = Mojo::URL->new('http://locations.krispykreme.com');
 
   my $ua = Mojo::UserAgent->new;
   my $locations = $ua->get(
-    'http://locations.krispykreme.com/Store-Locator/',
+    $url->clone->path('/Store-Locator/'),
     { 'X-Requested-With' => 'XMLHttpRequest' },
     form => {
       lat => $geo->[0],
@@ -28,8 +31,8 @@ sub _build_locations {
   return [] unless $locations;
 
   my $json = $ua->post(
-    'http://locations.krispykreme.com/Hotlight/HotLightStatus.ashx',
-    { Referer => 'locations.krispykreme.com' },
+    $url->clone->path('/Hotlight/HotLightStatus.ashx'),
+    { Referer => $url->host },
     form => {locations => $locations},
   )->res
    ->json;
