@@ -25,7 +25,7 @@ sub _build_locations {
     },
   )->res
    ->dom('.content-locations .content-results')
-   ->map(sub{$_->{id}})
+   ->pluck( attrs => 'id' )
    ->join(',');
 
   return [] unless $locations;
