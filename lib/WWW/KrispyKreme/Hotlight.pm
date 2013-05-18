@@ -1,49 +1,42 @@
 package WWW::KrispyKreme::Hotlight;
 
-use 5.008_005;
-use Moose;
-
-use URI;
-use WWW::Mechanize;
-use HTML::TreeBuilder::XPath;
-use Mojo::JSON;
+use Mojo::Base -base;
+use Mojo::UserAgent;
 
 our $VERSION = '0.01';
 
-has where => (is => 'rw', isa => 'ArrayRef[Num]');
-
-has locations => (is => 'rw', lazy => 1, builder => '_build_locations');
+has 'where';
+has locations => \&_build_locations;
 
 sub _build_locations {
-    my ($self) = @_;
-    my $geo = $self->{where} or return [];
+  my ($self) = @_;
+  my $geo = $self->{where} or return [];
 
-    my $mech = WWW::Mechanize->new;
-    my $uri = URI->new('http://locations.krispykreme.com/Store-Locator/');
-    $uri->query_form(
-        {   lat => $geo->[0],
-            lng => $geo->[1],
-        }
-    );
-    $mech->add_header('X-Requested-With' => 'XMLHttpRequest');
+  my $ua = Mojo::UserAgent->new;
+  my $locations = $ua->get(
+    'http://locations.krispykreme.com/Store-Locator/',
+    { 'X-Requested-With' => 'XMLHttpRequest' },
+    form => {
+      lat => $geo->[0],
+      lng => $geo->[1],
+    },
+  )->res
+   ->dom('.content-locations .content-results')
+   ->map(sub{$_->{id}})
+   ->join(',');
 
-    my $c = $mech->get($uri->as_string);
-    my $tree = HTML::TreeBuilder::XPath->new_from_content($c->decoded_content);
+  return [] unless $locations;
 
-    my $locations = join ',', $tree->findvalues(    #
-        './/div[@class="content-locations"]//div[@class="content-results"]/@id'
-    ) or return [];
+  my $json = $ua->post(
+    'http://locations.krispykreme.com/Hotlight/HotLightStatus.ashx',
+    { Referer => 'locations.krispykreme.com' },
+    form => {locations => $locations},
+  )->res
+   ->json;
 
-    $mech->add_header(Referer => $uri->host);
-    my $status_uri = URI->new('http://locations.krispykreme.com/Hotlight/HotLightStatus.ashx');
-    $c = $mech->post($status_uri->as_string, Content => {locations => $locations});
-    return [] unless $mech->success;
-
-    my $json = Mojo::JSON->new->decode($c->decoded_content);
-
-    return $json && $json->{status} eq 'success'
-      ? [@{$json->{data}{locations}}]
-      : [];
+  return $json && $json->{status} eq 'success'
+    ? [@{$json->{data}{locations}}]
+    : [];
 }
 
 1;
